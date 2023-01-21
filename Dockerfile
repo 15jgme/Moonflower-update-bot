@@ -1,4 +1,4 @@
-FROM node:19-alpine
+FROM node:current-alpine3.16
 
 RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 
@@ -11,7 +11,5 @@ USER node
 RUN npm install
 
 COPY --chown=node:node . .
-
-EXPOSE 8080
 
 CMD [ "node", "main.js" ]

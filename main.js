@@ -65,48 +65,59 @@ async function fetchPaper() {
   }
 
   let i = 0;
-  for await (const paper of papers) {
-    const paper = papers[i];
+  console.log(lastPaperId);
+  console.log(index_of_last_paper);
+  console.log(lastPaperFound);
+  if (index_of_last_paper > 0) {
+    for await (const paper of papers) {
+      const paper = papers[i];
 
-    // Check if the paper we're looking at is new 
-    if ((i < index_of_last_paper) || (!lastPaperFound)) {
-      console.log("Uploading paper " + i + " current id " + paper['id'])
+      // Check if the paper we're looking at is new 
+      if ((i < index_of_last_paper) || (!lastPaperFound)) {
+        console.log("Uploading paper " + i + " current id " + paper['id'])
 
-      // Get catagory ids for this paper
-      let catIds = []
-      paper['categories'].forEach(catagory => {
-        catagory = catagory.term;
-        // for each catagory in the paper, 
-        // if we have it in the ID map, push it to our ID map array
-        if (catIdMap.hasOwnProperty(catagory)) {
-          catIds.push(catIdMap[catagory]);
+        // Get catagory ids for this paper
+        let catIds = []
+        paper['categories'].forEach(catagory => {
+          catagory = catagory.term;
+          // for each catagory in the paper, 
+          // if we have it in the ID map, push it to our ID map array
+          if (catIdMap.hasOwnProperty(catagory)) {
+            catIds.push(catIdMap[catagory]);
+          }
+
+        });
+        // Assemble data
+        const paperLinks = paper['links'];
+        const pdf_link = paperLinks[1].href
+        console.log(pdf_link);
+        const data = {
+          "entry_id": paper['id'],
+          "title": paper['title'],
+          "created": paper['published'],
+          "summary": paper['summary'],
+          "doi": paper['doi'],
+          // "primary_catagory": "RELATION_RECORD_ID",
+          "catagories": catIds,
+          "pdf_url": pdf_link
+        };
+        console.log(reachedB)
+        try {
+          await pb.collection('articles').create(data, { '$autoCancel': false }); // Push new paper data
+        } catch (error) {
+          console.log("The following error occured" + error);
+        } finally {
+          console.log("Something went wrong with the article upload");
         }
 
-      });
-      // Assemble data
-      const data = {
-        "entry_id": paper['id'],
-        "title": paper['title'],
-        "created": paper['published'],
-        "summary": paper['summary'],
-        "doi": paper['doi'],
-        // "primary_catagory": "RELATION_RECORD_ID",
-        "catagories": catIds,
-        "pdf_url": paper['pdf_url']
-      };
-      try {
-        await pb.collection('articles').create(data, { '$autoCancel': false }); // Push new paper data
-      } catch (error) {
-        console.log("The following error occured" + error);
-      } finally{
-        console.log("Something went wrong with the article upload");
       }
-      
+      i = i + 1;
     }
-    i = i + 1;
   }
+
   console.log("Finished fetch")
 }
+
 fetchPaper()
 setInterval(fetchPaper, 600000);
 
